@@ -1,14 +1,16 @@
 export interface Person {
-  id: string
-  name: string
-  birthYear: number
-  deathYear: number
-  category: string
-  country: string
-  description: string
-  achievements: string[]
-  imageUrl?: string
-}
+    id: string;
+    name: string;
+    birthYear: number;
+    deathYear: number;
+    reignStart?: number;
+    reignEnd?: number;
+    category: string;
+    country: string;
+    description: string;
+    achievements: string[];
+    imageUrl?: string;
+  }
 
 export interface FilterOptions {
   categories: string[]

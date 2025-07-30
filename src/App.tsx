@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Person } from './types'
-import { sampleData } from './data/sampleData'
+import { getPersons, getCategories, getCountries } from './services/api'
 import './App.css'
 
 // Компонент выпадающего фильтра
@@ -276,10 +276,51 @@ function App() {
     countries: [] as string[],
     timeRange: { start: -800, end: 2000 }
   })
+  const [persons, setPersons] = useState<Person[]>([])
+  const [allCategories, setAllCategories] = useState<string[]>([])
+  const [allCountries, setAllCountries] = useState<string[]>([])
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Получаем уникальные категории и страны
-  const allCategories = [...new Set(sampleData.map(p => p.category))]
-  const allCountries = [...new Set(sampleData.map(p => p.country))]
+
+  // Единый useEffect для загрузки и фильтрации данных
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+
+        // Формируем параметры для запроса
+        const filtersToApply: any = {};
+        if (filters.categories.length > 0) {
+          filtersToApply.category = filters.categories.join(',');
+        }
+        if (filters.countries.length > 0) {
+          filtersToApply.country = filters.countries.join(',');
+        }
+        filtersToApply.startYear = filters.timeRange.start;
+        filtersToApply.endYear = filters.timeRange.end;
+
+        // Загружаем персон с учетом фильтров
+        const personsData = await getPersons(filtersToApply);
+        setPersons(personsData);
+
+        // Загружаем категории и страны только если они еще не загружены
+        if (allCategories.length === 0 || allCountries.length === 0) {
+          const [categoriesData, countriesData] = await Promise.all([
+            getCategories(),
+            getCountries()
+          ]);
+          setAllCategories(categoriesData);
+          setAllCountries(countriesData);
+        }
+      } catch (error) {
+        console.error("Ошибка при загрузке данных:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [filters]); // Перезагружаем данные при изменении фильтров
 
   // Порядок категорий для группировки
   const categoryOrder = [
@@ -298,27 +339,8 @@ function App() {
     return categoryOrder.indexOf(category)
   }
 
-  // Функция фильтрации данных
-  const filteredData = sampleData.filter(person => {
-    // Фильтр по категориям (если выбраны категории)
-    if (filters.categories.length > 0 && !filters.categories.includes(person.category)) {
-      return false
-    }
-    
-    // Фильтр по странам (если выбраны страны)
-    if (filters.countries.length > 0 && !filters.countries.includes(person.country)) {
-      return false
-    }
-    
-    // Фильтр по временному диапазону - человек попадает, если хотя бы 1 год жизни попадает в период
-    const personLifespan = person.deathYear - person.birthYear + 1
-    const hasOverlap = person.birthYear <= filters.timeRange.end && person.deathYear >= filters.timeRange.start
-    if (!hasOverlap) {
-      return false
-    }
-    
-    return true
-  }).sort((a, b) => {
+  // Функция фильтрации данных (теперь данные фильтруются на бэкенде, но сортировка остается)
+  const sortedData = [...persons].sort((a, b) => {
     // Сначала сортируем по категориям
     const categoryDiff = getCategoryPriority(a.category) - getCategoryPriority(b.category)
     if (categoryDiff !== 0) {
@@ -342,22 +364,23 @@ function App() {
 
 
   // Вычисляем реальный диапазон лет из отфильтрованных данных
-  const minYear = Math.min(...filteredData.map(p => p.birthYear))
-  const maxYear = Math.max(...filteredData.map(p => p.deathYear))
+  const minYear = Math.min(...sortedData.map(p => p.birthYear), filters.timeRange.start)
+  const maxYear = Math.max(...sortedData.map(p => p.deathYear), filters.timeRange.end)
   const totalYears = maxYear - minYear
 
   // Настройки масштаба
   const pixelsPerYear = 3 // 3 пикселя на год
-  const timelineWidth = totalYears * pixelsPerYear
+  const LEFT_PADDING_PX = 30 // отступ слева, чтобы крайняя левая подпись не упиралась в край
+  const timelineWidth = totalYears * pixelsPerYear + LEFT_PADDING_PX
 
   // Функция для вычисления позиции в пикселях
   const getPosition = (year: number) => {
-    return ((year - minYear) / totalYears) * timelineWidth
+    return LEFT_PADDING_PX + (year - minYear) * pixelsPerYear
   }
 
   // Функция для вычисления ширины полоски в пикселях
   const getWidth = (birthYear: number, deathYear: number) => {
-    return ((deathYear - birthYear) / totalYears) * timelineWidth
+    return (deathYear - birthYear) * pixelsPerYear
   }
 
   // Генерируем границы веков
@@ -469,9 +492,10 @@ function App() {
             
             // Проверяем, не пересекается ли с кем-то в этой строке
             for (const existingPerson of row) {
+              const BUFFER = 20; // минимальный зазор между персонами
               if (
-                (person.birthYear <= existingPerson.deathYear && person.deathYear >= existingPerson.birthYear) ||
-                (existingPerson.birthYear <= person.deathYear && existingPerson.deathYear >= person.birthYear)
+                person.birthYear - BUFFER <= existingPerson.deathYear &&
+                person.deathYear + BUFFER >= existingPerson.birthYear
               ) {
                 canPlaceInRow = false
                 break
@@ -506,7 +530,7 @@ function App() {
   }
 
   // Получаем размещение по строкам
-  const rowPlacement = calculateRowPlacement(filteredData)
+  const rowPlacement = calculateRowPlacement(sortedData)
 
   // Вычисляем общую высоту с учетом пустых строк
   const totalHeight = rowPlacement.reduce((height, row) => {
@@ -514,33 +538,51 @@ function App() {
   }, 0)
 
   // Функция для создания разделителей категорий
+    // Высота строки и отступ вниз для непустой строки
+  const ROW_HEIGHT = 60;
+  const ROW_MARGIN = 10; // margin-bottom, используется только для непустых строк
+  const EMPTY_ROW_HEIGHT = 20;
+
+  // Подсчитываем абсолютный top каждой строки, чтобы точно позиционировать разделители
+  const rowTops: number[] = [];
+  (() => {
+    let acc = 0;
+    rowPlacement.forEach(row => {
+      rowTops.push(acc);
+      if (row.length === 0) {
+        acc += EMPTY_ROW_HEIGHT;
+      } else {
+        acc += ROW_HEIGHT + ROW_MARGIN;
+      }
+    });
+  })();
+
   const createCategoryDividers = () => {
-    const dividers: { category: string; rowIndex: number }[] = []
-    let currentCategory = ''
-    let currentRowIndex = 0
-    
+    const dividers: { category: string; top: number }[] = [];
+    let currentCategory = '';
+
     rowPlacement.forEach((row, rowIndex) => {
       if (row.length > 0) {
-        const firstPersonInRow = row[0]
+        const firstPersonInRow = row[0];
         if (firstPersonInRow.category !== currentCategory) {
           if (currentCategory !== '') {
-            dividers.push({ category: currentCategory, rowIndex: currentRowIndex })
+            // закрываем предыдущую категорию
+            dividers.push({ category: currentCategory, top: rowTops[rowIndex] - 5 });
           }
-          currentCategory = firstPersonInRow.category
-          currentRowIndex = rowIndex
+          currentCategory = firstPersonInRow.category;
         }
       }
-    })
-    
-    // Добавляем последнюю категорию
-    if (currentCategory !== '') {
-      dividers.push({ category: currentCategory, rowIndex: currentRowIndex })
-    }
-    
-    return dividers
-  }
+    });
 
-  const categoryDividers = createCategoryDividers()
+    // Добавляем разделитель для последней категории
+    if (currentCategory !== '') {
+      dividers.push({ category: currentCategory, top: rowTops[rowPlacement.length - 1] - 5 });
+    }
+
+    return dividers;
+  };
+
+  const categoryDividers = createCategoryDividers();
 
   // Функция для определения цвета по категории
   const getCategoryColor = (category: string): string => {
@@ -636,6 +678,12 @@ function App() {
       </header>
       
       <main className="app-main">
+        {isLoading && (
+          <div className="loading-overlay">
+            <div className="spinner"></div>
+            <span>Загрузка данных...</span>
+          </div>
+        )}
         {/* Временная линия на весь экран */}
         <div className="timeline-container" style={{ 
           position: 'relative', 
@@ -733,7 +781,7 @@ function App() {
             {categoryDividers.map((divider, index) => (
               <div key={`category-divider-${divider.category}`} style={{
                 position: 'absolute',
-                top: `${divider.rowIndex * 60 - 5}px`,
+                top: `${divider.top}px`,
                 left: '0',
                 width: '100%',
                 height: '10px',
@@ -776,27 +824,70 @@ function App() {
               }}>
                 {row.map((person) => (
                   <React.Fragment key={person.id}>
-                    {/* Годы жизни над полоской */}
-                        <span style={{
-      position: 'absolute',
-      left: `${getPosition(person.birthYear)}px`,
-      top: 0,
-      fontSize: '11px',
-      color: 'rgba(244, 228, 193, 0.6)',
-      fontStyle: 'italic',
-      fontWeight: 400,
-      transform: 'translateY(-12px)'
-    }}>{person.birthYear}</span>
-    <span style={{
-      position: 'absolute',
-      left: `${getPosition(person.birthYear) + getWidth(person.birthYear, person.deathYear)}px`,
-      top: 0,
-      fontSize: '11px',
-      color: 'rgba(244, 228, 193, 0.6)',
-      fontStyle: 'italic',
-      fontWeight: 400,
-      transform: 'translate(-100%, -12px)'
-    }}>{person.deathYear}</span>
+                    {/* Годы жизни и правления над полоской */}
+                    <span style={{
+                      position: 'absolute',
+                      left: `${getPosition(person.birthYear)}px`,
+                      top: 0,
+                      fontSize: '11px',
+                      color: 'rgba(244, 228, 193, 0.6)',
+                      fontStyle: 'italic',
+                      fontWeight: 400,
+                      transform: 'translateX(-100%) translateY(-10px)'
+                    }}>{person.birthYear}</span>
+
+                    {person.reignStart && (
+                      <span className="reign-label" style={{
+                        position: 'absolute',
+                        left: `${getPosition(person.reignStart)}px`,
+                        top: 0,
+                        fontSize: '11px',
+                        color: '#E57373', // Темно-красный
+                        fontStyle: 'italic',
+                        fontWeight: 'bold',
+                        transform: 'translateX(-100%) translateY(-22px)'
+                      }}>👑 {person.reignStart}</span>
+                    )}
+
+                    {person.reignEnd && (
+                      <span className="reign-label" style={{
+                        position: 'absolute',
+                        left: `${getPosition(person.reignEnd)}px`,
+                        top: 0,
+                        fontSize: '11px',
+                        color: '#E57373', // Темно-красный
+                        fontStyle: 'italic',
+                        fontWeight: 'bold',
+                        transform: 'translateY(-22px)'
+                      }}>{person.reignEnd}</span>
+                    )}
+                    
+                    <span style={{
+                      position: 'absolute',
+                      left: `${getPosition(person.deathYear)}px`,
+                      top: 0,
+                      fontSize: '11px',
+                      color: 'rgba(244, 228, 193, 0.6)',
+                      fontStyle: 'italic',
+                      fontWeight: 400,
+                      transform: 'translateY(-10px)'
+                    }}>{person.deathYear}</span>
+
+                    {/* полоса правления */}
+                    {person.reignStart && person.reignEnd && (
+                      <div style={{
+                        position: 'absolute',
+                        top: '6px', /* чуть выше центра life-bar */
+                        left: `${getPosition(person.reignStart)}px`,
+                        width: `${getWidth(person.reignStart, person.reignEnd)}px`,
+                        height: '6px',
+                        backgroundColor: '#E57373',
+                        borderRadius: '3px',
+                        opacity: 0.9,
+                        zIndex: 11
+                      }} />
+                    )}
+
                     <div
                       className="life-bar"
                       style={{
