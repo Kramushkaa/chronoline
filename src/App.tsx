@@ -877,14 +877,16 @@ function App() {
                     {person.reignStart && person.reignEnd && (
                       <div style={{
                         position: 'absolute',
-                        top: '6px', /* чуть выше центра life-bar */
+                        top: '-15px',
                         left: `${getPosition(person.reignStart)}px`,
                         width: `${getWidth(person.reignStart, person.reignEnd)}px`,
-                        height: '6px',
-                        backgroundColor: '#E57373',
+                        height: '65px',
+                        backgroundColor: 'rgba(211, 47, 47, 0.25)',
+                        pointerEvents: 'none',
+                        borderLeft: '2px solid #D32F2F',
+                        borderRight: '2px solid #D32F2F',
                         borderRadius: '3px',
-                        opacity: 0.9,
-                        zIndex: 11
+                        zIndex: 4
                       }} />
                     )}
 
@@ -908,7 +910,8 @@ function App() {
                         minWidth: '60px',
                         boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
                         border: '1.5px solid #a8926a',
-                        opacity: 0.95
+                        opacity: 1,
+                        zIndex: 10
                       }}
                       onMouseEnter={(e) => {
                         e.currentTarget.style.transform = 'translateY(-3px) scale(1.02)'
