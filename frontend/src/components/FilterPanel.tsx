@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Person, FilterPanelProps, FilterOptions } from '../types'
+import { FilterPanelProps, FilterOptions } from '../types'
 import { Filter, X } from 'lucide-react'
 import './FilterPanel.css'
 

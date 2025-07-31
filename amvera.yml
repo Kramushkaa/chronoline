@@ -6,11 +6,8 @@ meta:
 build:
   skip: false
   additionalCommands: |
-    npm run install:all
-    cd frontend && npm run build
-    cd ..
+    cd backend && npm install
   artifacts:
-    "frontend/dist": /frontend/dist
     "backend": /backend
     "package.json": /package.json
 run:

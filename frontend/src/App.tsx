@@ -293,7 +293,7 @@ const FilterPanel = ({
 }
 
 function App() {
-  const [selectedPerson, setSelectedPerson] = useState<Person | null>(null)
+
   const [hoveredPerson, setHoveredPerson] = useState<Person | null>(null)
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
   const [showTooltip, setShowTooltip] = useState(false)
@@ -302,7 +302,7 @@ function App() {
   const [showAchievementTooltip, setShowAchievementTooltip] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
   const [activeAchievementMarker, setActiveAchievementMarker] = useState<{ personId: string; index: number } | null>(null)
-  const hoverTimerRef = useRef<number | null>(null)
+  const hoverTimerRef = useRef<NodeJS.Timeout | null>(null)
   const [filters, setFilters] = useState(() => {
     const savedFilters = localStorage.getItem('chronoline-filters');
     if (savedFilters) {
@@ -711,7 +711,7 @@ function App() {
               const startPos = getPosition(year)
               const endPos = getPosition(nextYear)
               const width = endPos - startPos
-              const centerPos = startPos + width / 2
+
               // Вычисляем век на основе центра года в столетии
               const centerYear = year + 50
               const centuryNumber = getCenturyNumber(centerYear)
@@ -782,7 +782,7 @@ function App() {
             pointerEvents: 'none',
             zIndex: 8
           }}>
-            {categoryDividers.map((divider, index) => (
+            {categoryDividers.map((divider) => (
               <div key={`category-divider-${divider.category}`} style={{
                 position: 'absolute',
                 top: `${divider.top}px`,

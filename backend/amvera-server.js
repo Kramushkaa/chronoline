@@ -42,9 +42,79 @@ function serveStaticFile(res, filePath) {
   
   fs.readFile(fullPath, (err, data) => {
     if (err) {
-      // Если файл не найден, возвращаем index.html для SPA
-      if (filePath !== '/') {
-        return serveStaticFile(res, '/');
+      // Если файл не найден, возвращаем простую HTML страницу
+      if (filePath === '/' || filePath === '/index.html') {
+        const html = `
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chronoline - Временная линия</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #2c1810 0%, #1a0f0a 100%);
+            color: #f4e4c1;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .container {
+            text-align: center;
+            max-width: 600px;
+        }
+        h1 {
+            color: #d4af37;
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+        p {
+            font-size: 1.2rem;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+        }
+        .api-info {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 2rem;
+        }
+        .api-link {
+            color: #d4af37;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .api-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌍 Chronoline</h1>
+        <p>Интерактивная временная линия исторических личностей</p>
+        <p>Backend API работает корректно!</p>
+        
+        <div class="api-info">
+            <h3>📊 API Endpoints:</h3>
+            <p><a href="/api/persons" class="api-link">/api/persons</a> - Исторические личности</p>
+            <p><a href="/api/categories" class="api-link">/api/categories</a> - Категории</p>
+            <p><a href="/api/countries" class="api-link">/api/countries</a> - Страны</p>
+        </div>
+        
+        <p style="margin-top: 2rem; font-size: 0.9rem; opacity: 0.7;">
+            Frontend будет доступен после сборки
+        </p>
+    </div>
+</body>
+</html>`;
+        res.writeHead(200, { 'Content-Type': 'text/html' });
+        res.end(html);
+        return;
       }
       res.writeHead(404, { 'Content-Type': 'text/plain' });
       res.end('File not found');
