@@ -28,17 +28,4 @@ SELECT DISTINCT category FROM persons ORDER BY category;
 
 -- Создание представления для получения уникальных стран
 CREATE OR REPLACE VIEW unique_countries AS
-WITH split_countries AS (
-  SELECT DISTINCT 
-    CASE 
-      WHEN country LIKE '%/%' THEN 
-        unnest(string_to_array(country, '/'))
-      ELSE 
-        country
-    END AS individual_country
-  FROM persons
-)
-SELECT DISTINCT trim(individual_country) as country 
-FROM split_countries 
-WHERE trim(individual_country) != ''
-ORDER BY country; 
+SELECT DISTINCT country FROM persons ORDER BY country; 

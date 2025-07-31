@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Person } from './types'
 import { getPersons, getCategories, getCountries } from './services/api'
+import { getCategoryColor, getCategoryColorDark, getCategoryColorMuted } from './utils/categoryColors'
 import './App.css'
 
 // Компонент выпадающего фильтра
@@ -146,21 +147,6 @@ const FilterPanel = ({
     }
   }
 
-  // Функция для определения цвета по категории
-  const getCategoryColor = (category: string): string => {
-    const colors: { [key: string]: string } = {
-      'Философ': '#FF6B6B',
-      'Художник': '#4ECDC4',
-      'Писатель': '#45B7D1',
-      'Поэт': '#96CEB4',
-      'Ученый': '#FFEAA7',
-      'Композитор': '#DDA0DD',
-      'Политик': '#98D8C8',
-      'Изобретатель': '#F7DC6F'
-    }
-    return colors[category] || '#95A5A6'
-  }
-
   // Функция для сброса всех фильтров
   const resetAllFilters = () => {
     setFilters({
@@ -270,6 +256,9 @@ function App() {
   const [hoveredPerson, setHoveredPerson] = useState<Person | null>(null)
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
   const [showTooltip, setShowTooltip] = useState(false)
+  const [hoveredAchievement, setHoveredAchievement] = useState<{ person: Person; year: number; index: number } | null>(null)
+  const [achievementTooltipPosition, setAchievementTooltipPosition] = useState({ x: 0, y: 0 })
+  const [showAchievementTooltip, setShowAchievementTooltip] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
   const [filters, setFilters] = useState({
     categories: [] as string[],
@@ -322,21 +311,10 @@ function App() {
     fetchData();
   }, [filters]); // Перезагружаем данные при изменении фильтров
 
-  // Порядок категорий для группировки
-  const categoryOrder = [
-    'Философ',
-    'Ученый', 
-    'Писатель',
-    'Поэт',
-    'Художник',
-    'Композитор',
-    'Политик',
-    'Архитектор'
-  ]
-
-  // Функция для получения приоритета категории
+    // Функция для получения приоритета категории
   const getCategoryPriority = (category: string) => {
-    return categoryOrder.indexOf(category)
+    // Используем все категории из API, а не только жестко заданные
+    return allCategories.indexOf(category)
   }
 
   // Функция фильтрации данных (теперь данные фильтруются на бэкенде, но сортировка остается)
@@ -476,7 +454,7 @@ function App() {
     })
     
     // Обрабатываем каждую категорию в заданном порядке
-    categoryOrder.forEach(category => {
+    allCategories.forEach(category => {
       if (categoryGroups[category]) {
         const categoryPeople = categoryGroups[category]
         const categoryRows: Person[][] = []
@@ -520,7 +498,7 @@ function App() {
         rows.push(...categoryRows)
         
         // Добавляем пустую строку для визуального разделения (кроме последней категории)
-        if (category !== categoryOrder[categoryOrder.length - 1]) {
+        if (category !== allCategories[allCategories.length - 1]) {
           rows.push([])
         }
       }
@@ -584,51 +562,7 @@ function App() {
 
   const categoryDividers = createCategoryDividers();
 
-  // Функция для определения цвета по категории
-  const getCategoryColor = (category: string): string => {
-    const colors: { [key: string]: string } = {
-      'Философ': '#FF6B6B',
-      'Художник': '#4ECDC4',
-      'Писатель': '#45B7D1',
-      'Поэт': '#96CEB4',
-      'Ученый': '#FFEAA7',
-      'Композитор': '#DDA0DD',
-      'Политик': '#98D8C8',
-      'Изобретатель': '#F7DC6F'
-    }
-    return colors[category] || '#95A5A6'
-  }
 
-  // Функция для определения темного цвета по категории
-  const getCategoryColorDark = (category: string): string => {
-    const colors: { [key: string]: string } = {
-      'Философ': '#e55a5a',
-      'Художник': '#3db8b0',
-      'Писатель': '#3ba3bd',
-      'Поэт': '#82baa0',
-      'Ученый': '#e6d395',
-      'Композитор': '#c78cc7',
-      'Политик': '#84c4b4',
-      'Изобретатель': '#e5c65d'
-    }
-    return colors[category] || '#7f8c8d'
-  }
-
-  // Функция для определения приглушённого цвета по категории
-  const getCategoryMutedColor = (category: string): string => {
-    const colors: { [key: string]: string } = {
-      'Философ': '#b97a6b',
-      'Художник': '#6b9b97',
-      'Писатель': '#7a8bb9',
-      'Поэт': '#7a9b7a',
-      'Ученый': '#b9b17a',
-      'Композитор': '#a17ab9',
-      'Политик': '#7ab9b1',
-      'Изобретатель': '#b9a97a',
-      'Архитектор': '#b9a27a'
-    }
-    return colors[category] || '#a8926a'
-  }
 
   return (
     <div className="app">
@@ -873,6 +807,90 @@ function App() {
                       transform: 'translateY(-10px)'
                     }}>{person.deathYear}</span>
 
+                    {/* Маркеры ключевых достижений */}
+                    {[person.achievementYear1, person.achievementYear2, person.achievementYear3]
+                      .filter(year => year !== undefined && year !== null)
+                      .map((year, index) => {
+                        let hoverTimer: number;
+                        
+                        return (
+                          <div key={index} style={{
+                            position: 'absolute',
+                            left: `${getPosition(year as number)}px`,
+                            top: '-4px',
+                            width: '2px',
+                            height: '15px',
+                            backgroundColor: getCategoryColorDark(person.category),
+                            zIndex: 15,
+                            transform: 'translateX(-50%)',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = getCategoryColor(person.category);
+                            e.currentTarget.style.boxShadow = `0 0 3px ${getCategoryColor(person.category)}`;
+                            // Находим span внутри и обновляем его стили
+                            const span = e.currentTarget.querySelector('span');
+                            if (span) {
+                              span.style.backgroundColor = 'rgba(44, 24, 16, 0.95)';
+                              span.style.borderColor = getCategoryColor(person.category);
+                              span.style.color = getCategoryColor(person.category);
+                              span.style.fontSize = '9px';
+                              span.style.padding = '2px 4px';
+                              span.style.borderRadius = '3px';
+                            }
+                            
+                            // Запускаем таймер для показа tooltip
+                            hoverTimer = setTimeout(() => {
+                              setHoveredAchievement({ person, year: year as number, index });
+                              setAchievementTooltipPosition({ x: e.clientX, y: e.clientY });
+                              setShowAchievementTooltip(true);
+                            }, 500);
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = getCategoryColorDark(person.category);
+                            e.currentTarget.style.boxShadow = 'none';
+                            // Возвращаем стили span к исходным
+                            const span = e.currentTarget.querySelector('span');
+                            if (span) {
+                              span.style.backgroundColor = 'rgba(44, 24, 16, 0.9)';
+                              span.style.borderColor = getCategoryColorDark(person.category);
+                              span.style.color = getCategoryColorDark(person.category);
+                              span.style.fontSize = '8px';
+                              span.style.padding = '1px 3px';
+                              span.style.borderRadius = '2px';
+                            }
+                            
+                            // Очищаем таймер и скрываем tooltip
+                            clearTimeout(hoverTimer);
+                            setShowAchievementTooltip(false);
+                            setHoveredAchievement(null);
+                          }}
+                          onMouseMove={(e) => {
+                            setAchievementTooltipPosition({ x: e.clientX, y: e.clientY });
+                          }}
+                          >
+                            <span style={{
+                              position: 'absolute',
+                              top: '-12px',
+                              left: '50%',
+                              transform: 'translateX(-50%)',
+                              fontSize: '8px',
+                              color: getCategoryColorDark(person.category),
+                              fontWeight: 'bold',
+                              whiteSpace: 'nowrap',
+                              backgroundColor: 'rgba(44, 24, 16, 0.9)',
+                              padding: '1px 3px',
+                              borderRadius: '2px',
+                              border: `1px solid ${getCategoryColorDark(person.category)}`,
+                              transition: 'all 0.2s ease'
+                            }}>
+                              {year}
+                            </span>
+                          </div>
+                        );
+                      })}
+
                     {/* полоса правления */}
                     {person.reignStart && person.reignEnd && (
                       <div style={{
@@ -898,7 +916,7 @@ function App() {
                         left: `${getPosition(person.birthYear)}px`,
                         width: `${getWidth(person.birthYear, person.deathYear)}px`,
                         height: '40px',
-                        background: `linear-gradient(135deg, ${getCategoryMutedColor(person.category)} 0%, #6a5a3a 100%)`,
+                        background: `linear-gradient(135deg, ${getCategoryColorMuted(person.category)} 0%, #6a5a3a 100%)`,
                         borderRadius: '6px',
                         cursor: 'pointer',
                         display: 'flex',
@@ -982,6 +1000,42 @@ function App() {
               {hoveredPerson.description}
             </p>
             
+            {/* Ключевые достижения по годам */}
+            {([hoveredPerson.achievementYear1, hoveredPerson.achievementYear2, hoveredPerson.achievementYear3]
+              .filter(year => year !== undefined && year !== null).length > 0) && (
+              <div style={{ marginTop: '0.5rem' }}>
+                <strong style={{ fontSize: '0.8rem', color: getCategoryColor(hoveredPerson.category) }}>
+                  🎯 Ключевые достижения:
+                </strong>
+                <div style={{ 
+                  margin: '0.25rem 0 0 0',
+                  fontSize: '0.8rem'
+                }}>
+                  {[hoveredPerson.achievementYear1, hoveredPerson.achievementYear2, hoveredPerson.achievementYear3]
+                    .filter(year => year !== undefined && year !== null)
+                    .map((year, index) => (
+                      <div key={index} style={{ 
+                        marginBottom: '0.1rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem'
+                      }}>
+                        <span style={{ 
+                          color: getCategoryColor(hoveredPerson.category),
+                          fontWeight: 'bold',
+                          fontSize: '0.75rem'
+                        }}>
+                          {year}
+                        </span>
+                        <span style={{ fontSize: '0.75rem' }}>
+                          {hoveredPerson.achievements[index] || 'Ключевое достижение'}
+                        </span>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            )}
+
             <div style={{ marginTop: '0.75rem' }}>
               <strong style={{ fontSize: '0.8rem' }}>Основные достижения:</strong>
               <ul style={{ 
@@ -1001,6 +1055,56 @@ function App() {
                 )}
               </ul>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Всплывающее окно для достижений */}
+      {hoveredAchievement && showAchievementTooltip && (
+        <div className="achievement-tooltip" style={{ 
+          position: 'fixed',
+          left: `${achievementTooltipPosition.x + 15}px`,
+          top: `${achievementTooltipPosition.y - 10}px`,
+          padding: '0.75rem',
+          zIndex: 1001,
+          maxWidth: '250px',
+          minWidth: '200px',
+          color: '#f4e4c1',
+          pointerEvents: 'none',
+          opacity: 0,
+          transform: 'translateY(10px) scale(0.95)',
+          animation: 'tooltipFadeIn 0.2s ease-out forwards',
+          backgroundColor: 'rgba(44, 24, 16, 0.95)',
+          borderRadius: '6px',
+          border: `2px solid ${getCategoryColor(hoveredAchievement.person.category)}`,
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)'
+        }}>
+          <div style={{ fontSize: '0.85rem', lineHeight: '1.4' }}>
+            <h4 style={{ 
+              margin: '0 0 0.5rem 0', 
+              color: getCategoryColor(hoveredAchievement.person.category),
+              fontSize: '1rem',
+              fontWeight: 'bold'
+            }}>
+              {hoveredAchievement.person.name}
+            </h4>
+            
+            <p style={{ 
+              margin: '0.25rem 0', 
+              fontWeight: 'bold',
+              color: getCategoryColor(hoveredAchievement.person.category),
+              fontSize: '0.9rem'
+            }}>
+              🎯 {hoveredAchievement.year}
+            </p>
+            
+            <p style={{ 
+              margin: '0.25rem 0', 
+              fontSize: '0.8rem',
+              fontStyle: 'italic'
+            }}>
+              {hoveredAchievement.person.achievements[hoveredAchievement.index] || 'Ключевое достижение'}
+            </p>
           </div>
         </div>
       )}

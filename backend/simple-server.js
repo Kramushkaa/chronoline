@@ -111,6 +111,9 @@ const server = http.createServer(async (req, res) => {
         country: row.country,
         description: row.description,
         achievements: row.achievements,
+        achievementYear1: row.achievement_year_1,
+        achievementYear2: row.achievement_year_2,
+        achievementYear3: row.achievement_year_3,
         imageUrl: row.image_url
       }));
       
@@ -149,6 +152,9 @@ const server = http.createServer(async (req, res) => {
         country: row.country,
         description: row.description,
         achievements: row.achievements,
+        achievementYear1: row.achievement_year_1,
+        achievementYear2: row.achievement_year_2,
+        achievementYear3: row.achievement_year_3,
         imageUrl: row.image_url
       };
       

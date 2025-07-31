@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Person, TimelineProps } from '../types';
+import { getCategoryColor, getCategoryColorDark } from '../utils/categoryColors';
 import './Timeline.css';
 
 interface LifespanBarProps {
@@ -12,33 +13,7 @@ interface LifespanBarProps {
   top: number;
 }
 
-const getCategoryColor = (category: string): string => {
-  const colors: { [key: string]: string } = {
-    'Философ': '#FF6B6B',
-    'Художник': '#4ECDC4',
-    'Писатель': '#45B7D1',
-    'Поэт': '#96CEB4',
-    'Ученый': '#FFEAA7',
-    'Композитор': '#DDA0DD',
-    'Политик': '#98D8C8',
-    'Изобретатель': '#F7DC6F',
-    'Военный деятель': '#F08080',
-    'Путешественник': '#87CEEB',
-    'Общественный деятель': '#90EE90',
-    'Религиозный деятель': '#DDA0DD',
-    'Архитектор': '#F4A460',
-    'Экономист': '#B0E0E6'
-  };
-  return colors[category] || '#95A5A6';
-};
 
-const getCategoryColorDark = (category: string): string => {
-    const darkColors: { [key: string]: string } = {
-        'Политик': '#D32F2F',
-        'Военный деятель': '#C62828',
-    };
-    return darkColors[category] || getCategoryColor(category);
-}
 
 
 const LifespanBar: React.FC<LifespanBarProps> = ({
@@ -54,6 +29,13 @@ const LifespanBar: React.FC<LifespanBarProps> = ({
   const getWidth = (start: number, end: number) => ((end - start) / totalYears) * 100;
 
   const hasReign = person.reignStart !== undefined && person.reignEnd !== undefined;
+  
+  // Получаем достижения
+  const achievements = [
+    person.achievementYear1,
+    person.achievementYear2,
+    person.achievementYear3
+  ].filter(year => year !== undefined && year !== null);
 
   return (
     <div
@@ -61,6 +43,39 @@ const LifespanBar: React.FC<LifespanBarProps> = ({
       style={{ top: `${top}px`, left: `${getPosition(person.birthYear)}%`, width: `${getWidth(person.birthYear, person.deathYear)}%` }}
       onClick={() => onSelect(person)}
     >
+        {/* Достижения - отображаем над полоской жизни */}
+        {achievements.map((year, index) => (
+          <div
+            key={index}
+            className="achievement-marker"
+            style={{
+              position: 'absolute',
+              top: '-25px',
+              left: `${getPosition(year as number)}%`,
+              transform: 'translateX(-50%)',
+              width: '2px',
+              height: '20px',
+              backgroundColor: getCategoryColorDark(person.category),
+              zIndex: 10
+            }}
+          >
+            <span
+              style={{
+                position: 'absolute',
+                top: '-20px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                fontSize: '10px',
+                color: getCategoryColorDark(person.category),
+                fontWeight: 'bold',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              {year}
+            </span>
+          </div>
+        ))}
+
         {hasReign && (
             <div className="reign-years">
                 <span style={{ color: getCategoryColorDark(person.category) }}>

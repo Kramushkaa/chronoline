@@ -103,6 +103,37 @@
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
+/* Стили для маркеров достижений */
+.achievement-marker {
+  position: absolute;
+  top: -25px;
+  width: 2px;
+  height: 20px;
+  background-color: #333;
+  z-index: 10;
+  transition: all 0.2s ease;
+}
+
+.achievement-marker:hover {
+  height: 25px;
+  background-color: #007bff;
+  box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+}
+
+.achievement-marker span {
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 10px;
+  font-weight: bold;
+  white-space: nowrap;
+  background-color: rgba(255, 255, 255, 0.95);
+  padding: 2px 4px;
+  border-radius: 3px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
 .lifespan-bar {
   position: relative;
   width: 100%;
