@@ -13,6 +13,9 @@ CREATE TABLE IF NOT EXISTS persons (
     country VARCHAR(100) NOT NULL,
     description TEXT NOT NULL,
     achievements TEXT[] NOT NULL,
+    achievement_year_1 INTEGER,
+    achievement_year_2 INTEGER,
+    achievement_year_3 INTEGER,
     image_url VARCHAR(500)
 );
 

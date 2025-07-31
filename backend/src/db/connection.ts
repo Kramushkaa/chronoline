@@ -1,14 +1,21 @@
 import { Pool, PoolConfig } from 'pg';
 import dotenv from 'dotenv';
-import { DatabaseConfig } from '../types';
 
 dotenv.config();
 
+interface DatabaseConfig {
+  host: string;
+  port: number;
+  database: string;
+  user: string;
+  password: string;
+}
+
 const dbConfig: DatabaseConfig = {
-  host: process.env.DB_HOST || 'localhost',
+  host: process.env.DB_HOST || 'amvera-kramushka-cnpg-chronoline-rw',
   port: parseInt(process.env.DB_PORT || '5432'),
-  database: process.env.DB_NAME || 'chronoline_db',
-  user: process.env.DB_USER || 'postgres',
+  database: process.env.DB_NAME || 'chronoline',
+  user: process.env.DB_USER || 'Kramushka',
   password: process.env.DB_PASSWORD || '1qwertyu'
 };
 

@@ -1,5 +1,21 @@
 import pool from './connection';
-import { Person } from '../types';
+
+interface Person {
+  id: string;
+  name: string;
+  birthYear: number;
+  deathYear: number;
+  reignStart?: number;
+  reignEnd?: number;
+  category: string;
+  country: string;
+  description: string;
+  achievements: string[];
+  achievementYear1?: number;
+  achievementYear2?: number;
+  achievementYear3?: number;
+  imageUrl?: string;
+}
 
 export const sampleData: Person[] = [
   // --- Базовые данные ---
@@ -13,7 +29,10 @@ export const sampleData: Person[] = [
     category: 'Политик',
     country: 'Римская республика',
     description: 'Древнеримский государственный и политический деятель, полководец, писатель.',
-    achievements: ['Завоевание Галлии', 'Реформа календаря', 'Диктатор Рима']
+    achievements: ['Завоевание Галлии', 'Реформа календаря', 'Диктатор Рима'],
+    achievementYear1: -58,
+    achievementYear2: -45,
+    achievementYear3: -44
   },
   {
     id: '2',
@@ -23,7 +42,10 @@ export const sampleData: Person[] = [
     category: 'Художник',
     country: 'Италия',
     description: 'Итальянский художник, ученый, изобретатель эпохи Возрождения',
-    achievements: ['Мона Лиза', 'Тайная вечеря', 'Витрувианский человек']
+    achievements: ['Мона Лиза', 'Тайная вечеря', 'Витрувианский человек'],
+    achievementYear1: 1503,
+    achievementYear2: 1495,
+    achievementYear3: 1490
   },
   {
     id: '3',
@@ -33,7 +55,10 @@ export const sampleData: Person[] = [
     category: 'Ученый',
     country: 'Англия',
     description: 'Английский физик, математик, астроном и философ',
-    achievements: ['Закон всемирного тяготения', 'Математические принципы', 'Оптика']
+    achievements: ['Закон всемирного тяготения', 'Математические принципы', 'Оптика'],
+    achievementYear1: 1687,
+    achievementYear2: 1704,
+    achievementYear3: 1666
   },
   {
     id: '4',
@@ -1038,8 +1063,8 @@ export async function seedDatabase() {
     
     for (const person of sampleData) {
       await client.query(
-        `INSERT INTO persons (id, name, birth_year, death_year, reign_start, reign_end, category, country, description, achievements, image_url)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+        `INSERT INTO persons (id, name, birth_year, death_year, reign_start, reign_end, category, country, description, achievements, achievement_year_1, achievement_year_2, achievement_year_3, image_url)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
         [
           person.id,
           person.name,
@@ -1051,6 +1076,9 @@ export async function seedDatabase() {
           person.country,
           person.description,
           person.achievements,
+          person.achievementYear1 || null,
+          person.achievementYear2 || null,
+          person.achievementYear3 || null,
           person.imageUrl || null
         ]
       );
