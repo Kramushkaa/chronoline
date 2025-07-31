@@ -64,16 +64,15 @@ CORS_ORIGIN=http://localhost:5173
 
 ### 5. Запуск сервера
 
-#### Режим разработки:
 ```bash
+npm start
+# или
 npm run dev
+# или
+node simple-server.js
 ```
 
-#### Продакшн режим:
-```bash
-npm run build
-npm start
-```
+**Примечание:** `npm run dev` в корне проекта запускает фронтенд, а в папке `backend/` - бэкенд.
 
 ## API Endpoints
 
@@ -112,17 +111,19 @@ GET /api/persons?category=Ученый&country=Англия&startYear=1600&endYe
 
 ```
 backend/
+├── simple-server.js         # Основной сервер
 ├── src/
 │   ├── db/
 │   │   ├── connection.ts    # Подключение к базе данных
 │   │   ├── init.sql         # SQL скрипт инициализации
 │   │   └── seed.ts          # Заполнение данными
 │   ├── routes/
-│   │   └── persons.ts       # Маршруты API
-│   ├── types/
-│   │   └── index.ts         # TypeScript типы
-│   ├── app.ts               # Конфигурация Express
-│   └── server.ts            # Запуск сервера
+│   │   ├── persons.ts       # Маршруты API
+│   │   ├── categories.ts    # Категории
+│   │   ├── countries.ts     # Страны
+│   │   └── stats.ts         # Статистика
+│   └── types/
+│       └── index.ts         # TypeScript типы
 ├── package.json
 ├── tsconfig.json
 └── README.md

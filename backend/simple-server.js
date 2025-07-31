@@ -74,9 +74,12 @@ const server = http.createServer(async (req, res) => {
       }
       
       if (country) {
-        // Разбиваем строку стран в массив
-        const countryArray = country.split(',');
-        query += ` AND country = ANY($${paramIndex}::text[])`;
+        // Разбиваем строку стран (из query ?country=США,Германия)
+        const countryArray = country.split(',').map(c => c.trim());
+        query += ` AND EXISTS ( 
+          SELECT 1 FROM unnest(string_to_array(country, '/')) AS c
+          WHERE trim(c) = ANY($${paramIndex}::text[])
+        )`;
         params.push(countryArray);
         paramIndex++;
       }

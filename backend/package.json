@@ -4,13 +4,11 @@
   "description": "Backend API for Chronoline - Interactive timeline of historical figures",
   "main": "dist/server.js",
   "scripts": {
-    "build": "tsc",
-    "start": "node dist/server.js",
-    "dev": "nodemon --exec ts-node src/server.ts",
+    "start": "node simple-server.js",
+    "dev": "node simple-server.js",
     "init-db": "ts-node src/db/init.ts",
     "seed": "ts-node src/db/seed.ts",
     "setup": "npm run init-db && npm run seed",
-    "test-api": "node test-api.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [

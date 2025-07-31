@@ -20,11 +20,18 @@ router.get('/', async (req: Request, res: Response) => {
       paramIndex++;
     }
     
-    // Фильтрация по стране
+    // Фильтрация по стране (поддержка множественных стран через "/")
     if (country) {
-      query += ` AND country = $${paramIndex}`;
-      params.push(country);
-      paramIndex++;
+      const countries = (country as string).split(',');
+      const countryConditions = countries.map((_, index) => {
+        return `EXISTS (
+          SELECT 1 FROM unnest(string_to_array(country, '/')) AS individual_country 
+          WHERE trim(individual_country) = $${paramIndex + index}
+        )`;
+      });
+      query += ` AND (${countryConditions.join(' OR ')})`;
+      countries.forEach(c => params.push(c.trim()));
+      paramIndex += countries.length;
     }
     
     // Фильтрация по временному диапазону
