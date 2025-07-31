@@ -1,0 +1,23 @@
+meta:
+  environment: node
+  toolchain:
+    name: npm
+    version: "18"
+build:
+  skip: false
+  additionalCommands: |
+    npm run install:all
+    cd frontend && npm run build
+    cd ..
+  artifacts:
+    "frontend/dist": /frontend/dist
+    "backend": /backend
+    "package.json": /package.json
+run:
+  scriptName: backend/amvera-server.js
+  scriptArguments: null
+  nodeArguments: null
+  command: cd backend && node amvera-server.js
+  persistenceMount: /data
+  containerPort: "3001"
+  servicePort: "80"
